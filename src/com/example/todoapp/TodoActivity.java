@@ -7,10 +7,12 @@ import java.util.ArrayList;
 import org.apache.commons.io.FileUtils;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -18,6 +20,8 @@ import android.widget.ListView;
 
 public class TodoActivity extends Activity {
 
+	private final int REQUEST_CODE = 20;
+	
 	private ArrayList<String> todoItems;
 	private ArrayAdapter<String> todoAdapter;
 	private ListView lvItems;
@@ -32,10 +36,25 @@ public class TodoActivity extends Activity {
         readItems();
         todoAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, todoItems);
         lvItems.setAdapter(todoAdapter);
-        setupListViewListener();
+        setupListViewListeners();
     }
     
-    private void setupListViewListener() {
+    private void ModifyList(String listText, int pos) {
+    	Intent i = new Intent(this, EditItemActivity.class);
+    	i.putExtra("text", listText);
+    	i.putExtra("position", pos);
+		startActivityForResult(i, REQUEST_CODE);
+    }
+    
+    private void setupListViewListeners() {
+    	lvItems.setOnItemClickListener(new OnItemClickListener() {
+
+			@Override
+			public void onItemClick(AdapterView<?> adapter, View item, int pos, long id) {
+				ModifyList(todoItems.get(pos), pos);
+			}
+		});
+    	
     	lvItems.setOnItemLongClickListener(new OnItemLongClickListener() {
 
 			@Override
@@ -47,6 +66,17 @@ public class TodoActivity extends Activity {
 			}
     		
     	});
+    }
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    	if (resultCode == RESULT_OK && requestCode == REQUEST_CODE) {
+    		int pos = data.getExtras().getInt("position");
+    		String text = data.getExtras().getString("newListItem");
+    		todoItems.set(pos, text);
+    		todoAdapter.notifyDataSetChanged();
+    		writeItems();
+    	}
     }
     
     public void onAddedItem(View v) {
